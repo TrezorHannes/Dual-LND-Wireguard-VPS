@@ -489,15 +489,15 @@ Now the moment of truth: once you tested the reboot, checked the LND log, and `l
 or troubleshoot where things could have gone wrong. If the former: Congratulations - you made it!
 
 Hope you enjoyed this article. Please do share feedback and suggestions for improvement.
-If this guide was of any help, I'd appreciate if you share the article with others, give me a follow on X [![Twitter URL](https://img.shields.io/twitter/url/https/twitter.com/HandsdownI.svg?style=social&label=Follow%20%40HodlmeTight1337)](https://twitter.com/HodlmeTight1337) or [nostr](https://njump.me/npub1ch25m5lkk8kfepr63f0jnpd9te8l9f585pfpr2g2ma4pre9rmlrqlu0yjy), perhaps even donating some sats to [hakuna@getalby.com](https://getalby.com/p/hakuna)
+If this guide was of any help, I'd appreciate if you share the article with others, give me a follow on X [![Twitter URL](https://img.shields.io/twitter/url/https/twitter.com/HandsdownI.svg?style=social&label=Follow%20%40HodlmeTight1337)](https://twitter.com/HodlmeTight1337) or [nostr](https://njump.me/npub1ch25m5lkk8kfepr63f0jnpd9te8l9f585pfpr2g2ma4pre9rmlrqlu0yjy), perhaps even donating some sats to [hakuna@hodlmetight.com](https://lnbits.hodlmetight.org/tipjar/1)
 
-I'm also always grateful for incoming channels to my node: [HODLmeTight](https://amboss.space/node/037f66e84e38fc2787d578599dfe1fcb7b71f9de4fb1e453c5ab85c05f5ce8c2e3)
+I'm also always grateful for incoming Hybrid channels to my node: [HODLmeTight](https://amboss.space/node/037f66e84e38fc2787d578599dfe1fcb7b71f9de4fb1e453c5ab85c05f5ce8c2e3)
 
 
 ## Appendix & FAQ
 
 #### I'm stuck and have no idea why it's not working. Who can help?
-Please add an issue on Github with your question and provide as much detail as possible. Keep it safe though, no macaroon or user-ids! Before that, use a [port-checker tool](https://portchecker.co/) or [LNping-bot](https://github.com/swissrouting/lnpingbot) to check your connection
+Please add an issue on Github with your question and provide as much detail as possible. Keep it safe though, no macaroon or user-ids! Before that, use a [port-checker tool](https://portchecker.co/) or [Tunnel⚡Sats Pingbot](http://t.me/TunnelSatsBot) to check your connection
 
 #### Why DigitalOcean - can't we pick a VPS where we can pay with Lightning, and anonymously
 Consider this guide a work-in-progress. I've picked DigitalOcean since I know what I'm doing there. Heard good things about [Luna Node](https://www.lunanode.com/), it's cheaper and you can pay with sats, so will test this out next. Also happy to add further alternatives, leave comments if you think these can accomplish the same results. Fee free to provide suggestions here.
