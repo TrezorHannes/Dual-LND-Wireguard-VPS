@@ -44,51 +44,52 @@ The Problem statement remains the same, you may prefer one solution over the oth
 
 
 ### Objective
-Your own, non-custodial [Lightning-Network](https://github.com/lightningnetwork/lnd) Node(s) running on both Tor and Clearnet [(Hybrid-Mode)](https://github.com/blckbx/lnd-hybrid-mode) installed on a cheap, but anonymous [Virtual Private Server (VPS)](https://www.webcentral.com.au/blog/what-does-vps-stand-for). This guide will outline the scenario for **two nodes**, so in case you only have one, or more than two, adjust the appropriate steps below.
+Your own, non-custodial [Lightning-Network](https://github.com/lightningnetwork/lnd) Node(s) running in **Hybrid-Mode** (Tor and Clearnet) via a cheap, anonymous [Virtual Private Server (VPS)](https://www.webcentral.com.au/blog/what-does-vps-stand-for). This guide outlines setup for **two nodes** (adjust steps for one or more).
 
 ### Challenge
-We want payment options with ₿itcoin to be fast, reliable, non-custodial - but the service should ideally not be easily to be identifiable. We also see a lot of reliance on Tor to provide that, which sometimes comes with trade-offs in speed and reliability.
+Fast, reliable, non-custodial Bitcoin payments should ideally be anonymous. Tor provides privacy but can be slow/unreliable.
 
 ### Proposed Solution
-There are plenty of ways how to solve for this. This creates hesitance to implement, especially when you're not very technical. This guide is supposed to provide _one approach_, whilst there remain many other ways to Rome. 
-Take your time following this through. It might take you 1hr, depending highly on your skill. So don't go in here in a rush.
+This guide offers **one approach** to improve speed and anonymity using a VPS and WireGuard. Follow carefully, it may take about 1 hour depending on your skills.
+
 
 ## Pre-Reads
-This guide heavily relies on the intelligence and documentation of others 🙏, but putting those together to one picture creates the last 10% hurdle which is sometimes the highest. Have a careful read through the following articles, to get a deeper understanding on some of the lighter references we'll be using further below
+To understand some concepts better, read these articles:
 - [Hybrid-Mode for LND](https://github.com/blckbx/lnd-hybrid-mode)
 - [Expose server behind NAT with WireGuard and a VPS](https://golb.hplar.ch/2019/01/expose-server-vpn.html)
 - [How To Set Up WireGuard on Ubuntu 22.04](https://www.digitalocean.com/community/tutorials/how-to-set-up-wireguard-on-ubuntu-22-04)
 
 
+
 ## Pre-Requisites
-- running `lnd-0.14.2-beta` or later. This can either be a pre or post 0.5 [Umbrel](https://getumbrel.com), [Raspiblitz](https://github.com/rootzoll/raspiblitz), [MyNode](https://mynodebtc.com/) or even a bare [RaspiBolt](https://raspibolt.org/)
-- Technical curiosity and not too shy to use the command-line
-- An SSH connection to your node, and to the VPS as well. On Windows, use something like [putty](https://www.putty.org/) and get [putty-gen](https://www.ssh.com/academy/ssh/putty/windows/puttygen), too
-- VPS Account at DigitalOcean or any alternative VPS Solution out there offering similar capabilities (it's critical they offer a public IP for you)
+- Running `lnd-0.14.2-beta` or later (Umbrel, Raspiblitz, MyNode, RaspiBolt, or bare Raspi)
+- Command-line familiarity
+- SSH access to your node and VPS (e.g., [PuTTY](https://www.putty.org/) on Windows)
+- VPS account with a public IP (DigitalOcean or alternatives)
 
 [![DigitalOcean Referral Badge](https://web-platforms.sfo2.cdn.digitaloceanspaces.com/WWW/Badge%201.svg)](https://www.digitalocean.com/?refcode=5742b053ef6d&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge)
 
-_Disclaimer: this is a ref link, gets you $100 in credit over 60 days, while the cheapest option we use here comes at a cost of $5/month._
+_Disclaimer: ref link, $100 credit over 60 days, cheapest option ~$5/month._
 
 
 ## Preperations
 The better we prepare, the more we can deal with blindspots and the unexpected.
 
 ### Make notes
-It's generally advised to document your own steps. Make a bucket-list of things you've done, and a ToDo to go through in case your environment changes. Imagine yourself 18 months from now, you want to setup this new hardware-node: Will you remember all the steps or extra corners you've taken?
-Suggested Laundry-List, you can tick them off while you go through this guide
-- [ ] IP-Adresses of VPS external, VPS Tunnel, Node Tunnel
-- [ ] Ports which needs forwarding
+Document your steps! Imagine future you setting up a new node - will you remember everything?
+
+Suggested checklist:
+- [ ] VPS external IP, VPS Tunnel IP, Node Tunnel IP
+- [ ] Ports to forward
 - [ ] ToDos
-- [ ] Questions / open items
+- [ ] Questions
 
 ### Visualize
-Some of us are visual people. Draw your diagram to get an idea how you want things to flow
+Draw a diagram to understand the flow.
 ![High-lvl-Flowchart](Hybrid-LND-WG-VPN.drawio.png)
 
 ### Secure
-It goes without saying, but this guide doesn't go into the necessary security steps in detail, and can't take on liability for any things breaking or losing funds. Ensure you don't get reckless, start with small funds you're ok to lose. Keep an eye on developments or in touch with the active Telegram Groups, to get news and updates with low delays. Also, would recommend to do those steps with a peer, so you follow a second pair of eye review. Lastly, 2fa / yubikeys are your friends!
-
+Security is critical! This guide doesn't cover all security steps in detail. Start with small funds, stay updated on security news, and ideally, do this with a peer for review. Use 2FA/YubiKeys!
 
 ## Let's get started (LFG!)
 Well, let's get into it, shall we?!
@@ -97,25 +98,29 @@ Well, let's get into it, shall we?!
 We will consider you have your **Lightning Node up and running**, connected via Tor and some funds on it. You also have SSH access to it and administrative privileges.
 
 ### VPS: Setup 
-In case you don't have a **VPS provider** already, sign-up with [my referal](https://m.do.co/c/5742b053ef6d) or [pick another](https://www.vpsbenchmarks.com/best_vps/2022) which provides you with a static IP and cheap costs. Maybe you even prefer one payable with Lightning ⚡. In case you go for DigitalOcean, here are the steps to create a Droplet, shouldn't take longer than a few minutes:
-   - add a new Droplet on the left hand navigation
-   - chose an OS of your preference, I have Ubuntu 20.04 (LTS) x64
-   - take the Basic Plan with a shared CPU, that's enough power. You can upgrade anytime if necessary
-   - Switch the CPU option to "Regular Intel with SSD", which should get you down to $6/month
-   - You don't need an extra volume, but pick a datacenter region of your liking
-   - Authentication: Chose the SSH keys option and follow the next steps to add your public keys in here for secure access. For Windows, with putty and putty-gen referenced above, you should be relatively quick to use those keys instead of a password. [For Linux users](https://serverpilot.io/docs/how-to-use-ssh-public-key-authentication/), you probably know your ways already.
-   - Add backups (costs), Monitoring or IPv6 if you wish to, however this guide won't use any of those items
-   - Lastly, chose a tacky hostname, something which resonates with you, eg myLND-node-VPS
+If you don't have a VPS, sign up via [referral link](https://m.do.co/c/5742b053ef6d) or choose another provider with static IP and reasonable cost (maybe even Lightning payable!).
 
-After a few magic cloud things happening, you have your Droplet initiated and it provides you with a public IPv4 Adress. Add it to your notes! In this guide, I'll refer to it as `VPS Public IP: 207.154.241.101`
+For DigitalOcean, create a Droplet (takes minutes):
+   - Add Droplet
+   - OS: Ubuntu 20.04 (LTS) x64 (or your preference)
+   - Plan: Basic, Shared CPU (upgrade later if needed)
+   - CPU option: "Regular Intel with SSD" (~$6/month)
+   - No extra volume needed
+   - Datacenter region: your choice
+   - Authentication: SSH keys (recommended, follow steps to add public keys. PuTTY-gen for Windows)
+   - No backups, monitoring, IPv6 needed for this guide
+   - Hostname: something memorable, e.g., `myLND-node-VPS`
+
+After setup, you'll get a public IPv4 address. Note it down as `VPS Public IP: 207.154.241.101` (example).
+
 
 
 ### VPS: Connect to your VPS and tighten it up
-Connect to your VPS via `SSH root@207.154.241.101` and you will be welcomed on your new, remote server. Next steps are critical to do right away, harden your setup:
-   - Update your packages: `apt update` and `apt upgrade`
-   - [Add a new Sudo User](https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu-22-04) like `admin`  and disable password login for `root` and all other users
-   - Enable Uncomplicated Firewall (UFW) and add ports to be allowed to connected to: 
-```
+Connect via SSH: `ssh root@207.154.241.101`. Harden your VPS immediately:
+   - `apt update && apt upgrade`
+   - [Add sudo user](https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu-22-04) (e.g., `admin`), disable root password login.
+   - Enable UFW (Uncomplicated Firewall):
+```bash
 $ apt install ufw
 $ ufw default deny incoming
 $ ufw default allow outgoing
@@ -124,16 +129,17 @@ $ ufw allow 9735 comment 'LND Main Node 1'
 $ ufw enable
 ```
    - Follow [further hardening steps](https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu-18-04)
-   - Install fail2ban to protect your SSH user, it runs automatically on it's own `sudo apt install fail2ban`
+   - `sudo apt install fail2ban` (SSH protection)
 
 ### VPS: Install Wireguard
-We basically follow the guide [Digital Ocean provides here](https://www.digitalocean.com/community/tutorials/how-to-set-up-wireguard-on-ubuntu-22-04). Read the full article and follow the steps for fully detailed context on commands listed below. We'll also skip IPv6 for now, as it'll make things unneccessarily complex to follow
-   - `sudo apt update && sudo apt install wireguard` # install WG
-   - `wg genkey | sudo tee /etc/wireguard/private.key` # create private key
-   - `sudo chmod go= /etc/wireguard/private.key` # change permissions of private key to this user only, otherwise it won't work
-   - `sudo cat /etc/wireguard/private.key | wg pubkey | sudo tee /etc/wireguard/public.key` # create public-key from your private one. Remember the location or make a node of it now, we'll need it soon
-   - choose an IP range which isn't used in your network now. We'll pick `10.8.0.0 to 10.255.255.255 (10/8 prefix)`, and dedicate `10.8.0.1` to the VPS, and `10.8.0.2` to your node later
-   - edit your VPS WG configuration: `sudo nano /etc/wireguard/wg0.conf` and ensure you add your previously generated privkey from `cat /etc/wireguard/private.key` into the configuration file below:
+Follow [DigitalOcean guide](https://www.digitalocean.com/community/tutorials/how-to-set-up-wireguard-on-ubuntu-22-04) for detailed context. Skipping IPv6 for simplicity.
+
+   - `sudo apt update && sudo apt install wireguard` # Install WireGuard
+   - `wg genkey | sudo tee /etc/wireguard/private.key` # Generate private key
+   - `sudo chmod go= /etc/wireguard/private.key` # Restrict private key permissions
+   - `sudo cat /etc/wireguard/private.key | wg pubkey | sudo tee /etc/wireguard/public.key` # Generate public key
+   - Choose IP range `10.8.0.0/8`. VPS: `10.8.0.1`, Node: `10.8.0.2`
+   - Edit `sudo nano /etc/wireguard/wg0.conf`:
 ```
 [Interface]
 PrivateKey = ***base64_encoded_private_key_goes_here***
@@ -141,60 +147,105 @@ Address = 10.8.0.1/24
 ListenPort = 51820
 SaveConfig = true
 ```
-   - `CTRL+X`, then `Y` and `Enter` to save your settings.
-   - You want to forward all traffic, so edit your sysctl with `sudo nano /etc/sysctl.conf` and add / uncomment `net.ipv4.ip_forward=1`, then save your changes and refresh it with `sudo sysctl -p`.
+   - `CTRL+X`, `Y`, `Enter` to save.
+   - `sudo nano /etc/sysctl.conf`, uncomment `net.ipv4.ip_forward=1`, `sudo sysctl -p` (enable forwarding).
+
    
 #### VPS: Firewall
-To activate packet forwarding, we need to add the first set of rules to the WireGuard configuration file. This will ensure that packages from your node get forwarded to the dev (device) which your VPS provider reserved for the internet connection.
-   - identify this device with `ip route list default`, which should show you something like `eth0`, `enps` just before the protocol.
-   - Make a note of this device, it's your link to the internet, and substitute it in the code below if necessary. 
-   - Copy this code below at the bottom of the file after the SaveConfig = true line: `sudo nano /etc/wireguard/wg0.conf`
+For packet forwarding, add rules to `wg0.conf`. This forwards packets from your node to the internet device.
 
-```
+   - Find internet device: `ip route list default` (e.g., `eth0`, `enps`). Note it down.
+   - Edit `sudo nano /etc/wireguard/wg0.conf`, add after `SaveConfig = true`:
+
+```bash
 PostUp = ufw route allow in on wg0 out on eth0
 PostUp = iptables -t nat -I POSTROUTING -o eth0 -j MASQUERADE
 PreDown = ufw route delete allow in on wg0 out on eth0
 PreDown = iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
 ```
-Save your changes again with `CTRL+X`, then `Y` and `Enter`
+   - `CTRL+X`, `Y`, `Enter` to save.
 
 #### VPS: LND Port-Forwarding
-Following the above section about packets going out, we want to ensure LND packets coming into your VPS will get forwarded to your node. We do this step now already, even though the Node isn't connected to the tunnel yet. The following pre-requisite is important to check, in case your system is different, please alter the LND port accordingly:
-   - Assumption: your current LND Node configuration is listening on port 9735, which you can verify by looking into your `cat ~/.lnd/lnd.conf` => `[Application Options]` => `listen=0.0.0.0:9735`
-   - add the following forwarding and routing rules to your iptables
-```       
+Forward LND packets to your node.
+
+   - Check LND port in `cat ~/.lnd/lnd.conf` (`listen=0.0.0.0:9735` assumed).
+   - Add iptables forwarding and routing rules:
+```bash
 sudo iptables -P FORWARD DROP
 sudo iptables -A FORWARD -i eth0 -o wg0 -p tcp --syn --dport 9735 -m conntrack --ctstate NEW -j ACCEPT
 sudo iptables -A FORWARD -i eth0 -o wg0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 sudo iptables -A FORWARD -i wg0 -o eth0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 sudo iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 9735 -j DNAT --to-destination 10.8.0.2
 sudo iptables -t nat -A POSTROUTING -o wg0 -p tcp --dport 9735 -d 10.8.0.2 -j SNAT --to-source 10.8.0.1
-```  
-*You may alter and add additional ports above in case you like to add more than one node.*
+```
+   *Adjust ports for multiple nodes.*
+
+   - **Allow SSH and WireGuard UDP port in UFW**:
+     - `sudo ufw allow 51820/udp`
+     - `sudo ufw allow OpenSSH`
+   - **(Best Practice) Limit SSH access to your home IP**:
+     - `sudo ufw allow from 185.111.222.0/24 proto tcp to any port 22 comment 'SSH from Home'` (example, replace with your IP).
+     - Test SSH login in another terminal to avoid lockout!
+   - Refresh UFW: `sudo ufw disable && sudo ufw enable`, check status: `sudo ufw status verbose`
+
+   - **Make iptables rules persistent**:
+```bash
+# Create a script to save and restore the iptables rules
+sudo nano /etc/wireguard/iptables-save.sh
+```
+
+Add these lines to the script:
+```bash
+#!/bin/bash
+# Save current iptables rules
+iptables-save > /etc/wireguard/iptables.rules
+ip6tables-save > /etc/wireguard/ip6tables.rules
+```
+
+Make it executable:
+```bash
+sudo chmod +x /etc/wireguard/iptables-save.sh
+```
+
+Now create a service to restore rules at boot:
+```bash
+sudo nano /etc/systemd/system/iptables-restore.service
+```
+
+Add this content:
+```
+[Unit]
+Description=Restore iptables rules
+After=network.target
+Before=wg-quick@wg0.service
+[Service]
+Type=oneshot
+ExecStart=/sbin/iptables-restore /etc/wireguard/iptables.rules
+ExecStart=/sbin/ip6tables-restore /etc/wireguard/ip6tables.rules
+RemainAfterExit=yes
+[Install]
+WantedBy=multi-user.target
+```
+Now save your current rules and enable the service:
+```bash
+sudo /etc/wireguard/iptables-save.sh
+sudo systemctl enable iptables-restore.service
+```
+
+This approach preserves your UFW configuration while ensuring your custom iptables rules for WireGuard are applied after a reboot.
 
 
-   - **Now don't forget** to allow SSH access and the WG UDP port: `sudo ufw allow 51820/udp` and `sudo ufw allow OpenSSH`
-   - **Best Practice**: Only allow SSH in from your home-IP: `sudo ufw allow from 185.111.222.0/24 proto tcp to any port 22 comment 'SSH from Home'`. Stay connected with two terminals and try to login once you do the below, to ensure you don't lock yourself out. In case you have a dynamic IP at home, either follow [this guide](https://unix.stackexchange.com/a/91711) to use a dynamic-host and resolve it every x-minutes, or tighten [your SSH differently](https://linuxhint.com/secure-ssh-server-ubuntu/).
-   - Ensure to do the next step again with two terminals logged in, so you can test if your UFW setting let's you login. In case you lock yourself out, you need to reimage the machine, and we want to avoid that learning exercise.
-   - `sudo ufw disable` and `sudo ufw enable` # Refresh uncomplicated firewall, and check the status with `sudo ufw status verbose`
-   
-   To keep those rules active after a reboot, another little nifty toolset is necessary to install:
-```
-sudo apt install netfilter-persistent
-sudo apt install iptables-persistent
-sudo netfilter-persistent save
-sudo systemctl enable netfilter-persistent
-```
 #### VPS: Start your WireGuard Server
-   - `sudo systemctl enable wg-quick@wg0.service` # to add it as a service
-   - `sudo systemctl start wg-quick@wg0.service` # to start the service
-   - `sudo systemctl status wg-quick@wg0.service` # to check whether it's running fine
-   
-Your Wireguard Server is now running, which means the Internet can now connect to your VPS via ports 9735 and 22 SSH from your home, and it has a closed tunnel established on port 51820. You need to doublecheck your notes with these 3 items essential for your new running frontend server.
+   - `sudo systemctl enable wg-quick@wg0.service` # Enable as service
+   - `sudo systemctl start wg-quick@wg0.service` # Start service
+   - `sudo systemctl status wg-quick@wg0.service` # Check status
 
-   - [ ] VPS Wireguard IP: Run `ip address` and you typically find 3 devices listed with IPs assigned. Your `lo/loopback` which you can ignore, your `eth0` being your link to the internet, and the new `wg0` IP which we have assigned ourselves in the `wg0.conf` earlier
-   - [ ] The port you have defined in your wg0.conf, `51820` if you just followed the guide above
-   - [ ] Your Wireguard Server Public Key
+Your WireGuard server is running! Internet can connect to VPS on ports 9735 and 22 (SSH from home), tunnel on port 51820.
+
+Check your notes for:
+   - [ ] VPS Wireguard IP (`ip address`, look for `wg0`)
+   - [ ] Port from `wg0.conf` (`51820` if default)
+   - [ ] Wireguard Server Public Key
 
 
 
@@ -204,23 +255,19 @@ Your Wireguard Server is now running, which means the Internet can now connect t
 We have installed the tunnel through the mountain, but need to get our LND Node to use it.
 
 ### LND Node: Install and test the VPN Tunnel
-Now switch to another terminal window, and SSH into your **Lightning Node**. We want to connect to the VPS, for that, we basically replicate the steps installing wg, creating a private and public key, and connect and establish the tunnel. 
+Switch to your **Lightning Node** terminal. Replicate VPS WireGuard setup to connect to the VPS tunnel.
 
-```
+```bash
 $ sudo apt update
 $ sudo apt install wireguard -y
-# we need resolve-conf to successfully tunnel our DNS requests via the tunnel
-$ sudo apt install resolvconf -y 
+$ sudo apt install resolvconf -y # for DNS via tunnel
 $ wg genkey | sudo tee /etc/wireguard/private.key
 $ sudo chmod go= /etc/wireguard/private.key
-# make a note of your private key, and keep it secret. We'll need it for the wg0.conf on your node again
 $ sudo cat /etc/wireguard/private.key | wg pubkey | sudo tee /etc/wireguard/public.key
-# make a note of your public key, we will need it for the server later to allow this node to connect to it.
+# Note down private key (secret!) and public key (for server config).
 ```
 
-Now we'll create the `wg0.conf` on your node. The upper interface part is your node, the Peer section are the details of your VPS WG-Server. Replace the PrivateKey on Top from your node details, and add the PublicKey and the Endpoint attributes with your WG-Server you noted down earlier. 
-
-   - Open up the `sudo nano /etc/wireguard/wg0.conf`
+Create `wg0.conf` on your node: `sudo nano /etc/wireguard/wg0.conf`
 
 ```
 [Interface]
@@ -234,13 +281,14 @@ Endpoint = 207.154.241.101:51820
 PersistentKeepalive = 25
 ```
 
-**Important element**: Since we want to route all traffic from your node through the tunnel, the next steps are important to follow through. This ensures that you can still access your node in your LAN at home, otherwise you'd always need to connect to your VPS, to get through the tunnel back to your node. Not desirable!
 
-   - Identify your node main IP gateway to the internet with `ip route list table main default`
-   - Make a note of the IP, eg `203.0.113.1` and the dev, eg `eth0`
-   - Now identify your node's own IP with `ip -brief address show eth0`, eg `203.0.113.5` (at home, it's more likely something like `192.168.1.20`)
-   - Lastly, in your other terminal window, make a note of your VPS' DNS Servers. Since your node will go through the tunnel, we want to ensure it can use the VPS for DNS resolving: `resolvectl dns eth0`. It'll show you one or two IPv4 IPs, use them both to be sure, eg `67.207.67.2 67.207.67.3`
-   - `sudo nano /etc/wireguard/wg0.conf`, and before the [Peer] line, add the following 4 lines:
+**Important**: Route all node traffic through the tunnel, but keep local LAN access.
+
+   - `ip route list table main default` (find node's internet gateway IP and device, e.g., `203.0.113.1 eth0`)
+   - `ip -brief address show eth0` (find node's IP, e.g., `203.0.113.5` or `192.168.1.20`)
+   - `resolvectl dns eth0` (VPS DNS servers, e.g., `67.207.67.2 67.207.67.3` from VPS terminal)
+   - Edit `sudo nano /etc/wireguard/wg0.conf`, add before `[Peer]`:
+
 
 ```
 PostUp = ip rule add table 200 from 203.0.113.5
@@ -250,22 +298,22 @@ PreDown = ip route delete table 200 default via 203.0.113.1
 
 DNS = 67.207.67.2 67.207.67.3
 ```
-   - [ ] For the next step, let's remind ourselves about the publicKey of our node: `sudo cat /etc/wireguard/public.key`
-    
-With this completed, the node is ready to engage in the tunnel. But the server won't accept a connection. So let's add us to the allow-list, shall we? Open up the **terminal window on your VPS**, and add your node as a friendly peer.
+   - `sudo cat /etc/wireguard/public.key` # Note down node's public key.
 
-   - Ensure to replace the PublicKey of your node here: `sudo wg set wg0 peer NodePublicKey allowed-ips 10.8.0.2`
-   - Validate that your settings have been added successfully: `sudo wg`
+Now, switch to **VPS terminal** to allow node connection.
 
-**Important Warning**: Be aware that the next step basically reroutes all your node traffic going out from home through the tunnel instead, so if you're running your LND node, there might be a small down-time following. Be patient! Now comes the first test-run. 👀
+   - `sudo wg set wg0 peer NodePublicKey allowed-ips 10.8.0.2` (replace `NodePublicKey`)
+   - `sudo wg` (verify settings)
 
-   - `sudo wg-quick up wg0` which will activate your tunnel temporarily. 
-   - `sudo wg` will show you the status on both the Node terminal, as well as on the VPS. Check if you have a handshake, and traffic is recorded
-   - On your node, check if DNS resolving works with `ip route get 1.1.1.1`, the DNS service by Cloudflare.
-   - To deactivate your WG-Tunnel, just call `sudo wg-quick down wg0`
-   - If you like the results, you can make the WG-Tunnel permanent and activate itself automatically after a reboot, with the following two commands similar to the server setting earlier: first deactivate the current tunnel if running, with `sudo wg-quick down wg0`, then add it to your systemd startup-routine with `sudo systemctl enable wg-quick@wg0.service` and `sudo systemctl start wg-quick@wg0.service`, and check the status with `sudo systemctl status wg-quick@wg0.service`
+**Warning**: Next step reroutes node traffic through tunnel, potential downtime for LND. Be patient!
 
-The tunnel between your LND Node and your VPS VPN is established. If you need to troubleshoot, call the systemctl journal via `sudo wg show`
+   - `sudo wg-quick up wg0` (activate tunnel temporarily)
+   - `sudo wg` (check status on both Node and VPS terminals, handshake and traffic?)
+   - `ip route get 1.1.1.1` (check DNS resolving on node)
+   - `sudo wg-quick down wg0` (deactivate tunnel)
+   - For permanent tunnel: `sudo wg-quick down wg0`, `sudo systemctl enable wg-quick@wg0.service`, `sudo systemctl start wg-quick@wg0.service`, `sudo systemctl status wg-quick@wg0.service`
+
+Tunnel established! Troubleshoot with `sudo wg show` or `sudo systemctl journal -u wg-quick@wg0.service`.
 
 
 ### LND Node: LND adjustments to listen and channel via VPS VPN Tunnel
